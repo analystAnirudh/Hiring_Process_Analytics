@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiring Process Analytics | Anirudh Chaudhary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4C3A51;      /* Deep Raisin Black/Purple (Wine) */
+            --secondary-color: #774360;    /* Muted Plum (Wine) */
+            --accent-color: #B25068;      /* Rose Pink/Accent (Wine) */
+            --highlight-color: #E7AB79;    /* Gold/Amber for highlights */
+            --background-color: #F9F9F9;  /* Almost white */
+            --text-color: #333333;
+            --white-color: #FFFFFF;
+            --border-color: #EAEAEA;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        .header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--white-color); padding: 30px 0; text-align: center;
+            margin-bottom: 30px; border-bottom: 5px solid var(--accent-color); position: relative;
+        }
+
+        .header-title { font-size: 2.5rem; font-weight: 700; }
+        .header-subtitle { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; font-weight: 300; }
+        .profile { text-align: center; margin-bottom: 50px; }
+        .profile-image {
+            width: 160px; height: 160px; border-radius: 50%; object-fit: cover;
+            border: 4px solid var(--highlight-color);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+        .profile-image:hover { transform: scale(1.05); }
+        .profile-name { font-size: 2.4rem; font-weight: 700; margin-top: 20px; color: var(--primary-color); }
+        .profile-title { font-size: 1.3rem; color: var(--secondary-color); margin-bottom: 15px; font-weight: 500; }
+        .profile-description { max-width: 750px; margin: 0 auto; color: var(--text-light); font-size: 1.05rem; }
+
+        .metrics-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px; margin-bottom: 50px;
+        }
+
+        .metric-card {
+            background: var(--white-color); border-radius: 12px; padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05); text-align: center;
+            border-top: 4px solid var(--secondary-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .metric-card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+        .metric-icon { font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 15px; transition: all 0.3s ease; }
+        .metric-card:hover .metric-icon { color: var(--accent-color); transform: scale(1.1); }
+        .metric-value { font-size: 2.2rem; font-weight: 700; color: var(--primary-color); margin: 10px 0; }
+        .metric-label { font-size: 1rem; color: #666; font-weight: 500; }
+        
+        .dashboard-container {
+            background-color: var(--white-color); border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden;
+            margin-bottom: 50px; position: relative; border: 1px solid var(--border-color);
+        }
+        .dashboard-image { width: 100%; height: auto; display: block; border: none; }
+
+        .section {
+            background-color: var(--white-color); border-radius: 12px;
+            margin-bottom: 25px; box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            overflow: hidden; border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            padding: 20px 25px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; background-color: #fff;
+            border-bottom: 1px solid var(--border-color); transition: background-color 0.3s ease;
+        }
+        .section-header:hover { background-color: #fdfcff; }
+        .section-title { font-size: 1.4rem; font-weight: 600; color: var(--primary-color); }
+        .section-toggle { font-size: 1.8rem; color: var(--accent-color); transition: transform 0.3s ease; }
+        .section.active .section-toggle { transform: rotate(45deg); }
+
+        .section-content {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.7s ease-in-out, padding 0.5s ease-in-out;
+            padding: 0 25px;
+        }
+        .section.active .section-content { max-height: 2200px; padding: 25px; }
+        
+        .task-layout { display: grid; grid-template-columns: 1fr; gap: 30px; }
+        @media (min-width: 992px) {
+            .task-layout { grid-template-columns: 1fr 1.3fr; align-items: flex-start; }
+        }
+
+        .task-subsection { margin-bottom: 25px; }
+        .task-subsection h4 {
+            font-size: 1.1rem; font-weight: 600; color: var(--secondary-color); margin-bottom: 10px;
+            border-left: 3px solid var(--highlight-color); padding-left: 10px;
+        }
+        .task-subsection p, .task-subsection li { color: var(--text-light); margin-bottom: 10px; }
+        
+        .formula-box {
+            background-color: #2d2d2d; color: #f8f8f2; padding: 15px;
+            border-radius: 8px; overflow-x: auto; margin: 15px 0;
+            font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;
+        }
+
+        .excel-table {
+            width: 100%; border-collapse: collapse; margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px; overflow: hidden;
+        }
+        .excel-table th, .excel-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .excel-table thead th { background-color: var(--secondary-color); color: var(--white-color); font-weight: 600; }
+        .excel-table tbody tr:nth-of-type(even) { background-color: #fdfcff; }
+        .excel-table tbody tr:hover { background-color: #f8f1f4; }
+        .excel-table td:first-child { font-weight: 600; color: var(--primary-color); }
+
+        .chart-container {
+            position: relative; background: var(--white-color); padding: 20px;
+            border-radius: 12px; border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-height: 450px;
+        }
+
+        .highlight {
+            font-weight: 600; background-color: #fcf2e8; color: #D1884F;
+            padding: 2px 6px; border-radius: 4px;
+        }
+
+        .download-button-container {
+            display: flex; justify-content: center; flex-wrap: wrap;
+            gap: 20px; margin-top: 40px;
+        }
+        .download-button, .excel-download-button {
+            display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px;
+            color: #fff; text-align: center; font-size: 1rem; font-weight: 600;
+            border-radius: 8px; text-decoration: none; transition: all 0.3s ease;
+            border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .download-button { background-color: var(--primary-color); }
+        .excel-download-button { background-color: #1D6F42; }
+        .download-button:hover, .excel-download-button:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+
+        .social-links { display: flex; gap: 20px; justify-content: center; margin-top: 40px; }
+        .social-links a {
+            color: #fff; width: 50px; height: 50px; display: flex;
+            justify-content: center; align-items: center; border-radius: 50%;
+            text-decoration: none; transition: all 0.3s ease; font-size: 22px;
+        }
+        .social-links a:hover { transform: translateY(-5px) scale(1.1); box-shadow: 0 5px 10px rgba(0,0,0,0.2); }
+        .linkedin { background-color: #0077B5; }
+        .github { background-color: #333; }
+        .gmail { background-color: #D14836; }
+        footer { text-align: center; padding: 25px; background-color: var(--white-color); border-top: 1px solid var(--border-color); margin-top: 50px; }
+        .footer-name { color: var(--primary-color); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="header-title">Hiring Process Analytics</h1>
+        <p class="header-subtitle">Driving Recruitment Strategy with Data Insights using Microsoft Excel</p>
+    </div>
+
+    <div class="container">
+        <div class="profile">
+            <img src="img/Anirudh_image.png" alt="Profile Picture" class="profile-image">
+            <h1 class="profile-name">Anirudh Chaudhary</h1>
+            <p class="profile-title">Data Analyst | HR Analytics</p>
+            <p class="profile-description">
+                This project showcases a comprehensive analysis of a multinational company's hiring process. By cleaning, summarizing, and visualizing recruitment data in Excel, I've uncovered key insights into gender diversity, salary structures, and departmental resource allocation to inform data-driven HR strategies.
+            </p>
+        </div>
+
+        <div class="metrics-container">
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fas fa-users-cog"></i></div>
+                <div class="metric-label">Total Candidates Hired</div>
+                <div class="metric-value" id="total-hires">0</div>
+                <div>Across All Departments</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fas fa-venus-mars"></i></div>
+                <div class="metric-label">Gender Diversity Ratio</div>
+                <div class="metric-value" id="male-hire-rate">0:0</div>
+                <div>Male : Female Hires</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fas fa-wallet"></i></div>
+                <div class="metric-label">Avg. Purchase Dept. Salary</div>
+                <div class="metric-value" id="avg-salary">0</div>
+                <div>A Key Department</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fas fa-database"></i></div>
+                <div class="metric-label">Duplicate Records Cleaned</div>
+                <div class="metric-value" id="duplicates-removed">0</div>
+                <div>For Data Integrity</div>
+            </div>
+        </div>
+
+        <div class="dashboard-container">
+             <img src="img/thumbnail_project.png" alt="Hiring Analytics Dashboard Thumbnail" class="dashboard-image">
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Task A: Gender Distribution of Hires</h2>
+                <div class="section-toggle">+</div>
+            </div>
+            <div class="section-content">
+                <div class="task-layout">
+                    <div>
+                        <div class="task-subsection">
+                            <h4>Objective & Approach</h4>
+                            <p>To assess gender diversity in the hiring process, it was essential to quantify the distribution of hires. I approached this by meticulously filtering the dataset to isolate candidates with a "Hired" status and then segmenting this group by gender.</p>
+                        </div>
+                        <div class="task-subsection">
+                            <h4>Key Formulas & Methods</h4>
+                            <p>A <strong>Pivot Table</strong> was the primary tool, configured with 'Status' in the Filters area (set to "Hired") and 'Gender' in the Rows area. 'Count of Gender' was placed in the Values area. Alternatively, the <strong>`COUNTIFS`</strong> function was used for a formula-based approach:</p>
+                            <pre class="formula-box"><code>=COUNTIFS(Data[Gender], "Male", Data[Status], "Hired")</code></pre>
+                        </div>
+                        <div class="task-subsection">
+                            <h4>Results: Hires by Gender</h4>
+                            <p>The analysis revealed a gender imbalance, with male hires constituting <span class="highlight">54.5%</span> of the total, a key finding for diversity and inclusion initiatives.</p>
+                            <table class="excel-table">
+                                <thead><tr><th>Gender</th><th>Candidates Hired</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Male</td><td>2,552</td></tr>
+                                    <tr><td>Female</td><td>1,850</td></tr>
+                                    <tr><td>Did Not Disclose</td><td>277</td></tr>
+                                    <tr><td><strong>Grand Total</strong></td><td><strong>4,679</strong></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="genderDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Task B: Average Salary Analysis by Department</h2>
+                <div class="section-toggle">+</div>
+            </div>
+            <div class="section-content">
+                <div class="task-layout">
+                    <div>
+                        <div class="task-subsection">
+                            <h4>Objective & Approach</h4>
+                            <p>To evaluate if compensation is competitive across the organization, I calculated the average salary for new hires within each department. This provides a baseline for ensuring equitable and market-aligned pay structures.</p>
+                        </div>
+                         <div class="task-subsection">
+                            <h4>Key Formulas & Methods</h4>
+                            <p>This was achieved using a <strong>Pivot Table</strong> where 'Department' was the Row label and 'Average of Offered Salary' was the Value field. The <strong>`AVERAGEIFS`</strong> function provides a more direct formulaic method for this calculation:</p>
+                             <pre class="formula-box"><code>=AVERAGEIFS(Data[Offered Salary], Data[Department], "Sales Department")</code></pre>
+                             <p>This insight is key for benchmarking. General Management offers the highest average salary at over <span class="highlight">₹58,000</span>, while others cluster around ₹49k-₹52k.</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="averageSalaryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Task C: Salary Distribution Analysis</h2>
+                <div class="section-toggle">+</div>
+            </div>
+            <div class="section-content">
+                <div class="task-layout">
+                    <div>
+                        <div class="task-subsection">
+                            <h4>Objective & Approach</h4>
+                            <p>Understanding salary distribution is crucial for budget planning and compensation strategy. I created salary brackets (class intervals) and visualized the frequency of salaries within each bracket to see where most offers fall.</p>
+                        </div>
+                        <div class="task-subsection">
+                            <h4>Key Formulas & Methods</h4>
+                            <p>Excel's <strong>Histogram tool</strong> from the <strong>Data Analysis Toolpak</strong> is ideal for this. I defined bins (e.g., 25000, 50000, 75000) to group the 'Offered Salary' data. A manual approach involves using the <strong>`COUNTIFS`</strong> or <strong>`FREQUENCY`</strong> function for each bracket:</p>
+                             <pre class="formula-box"><code>=COUNTIFS(Data[Salary], "&gt;=25000", Data[Salary], "&lt;50000")</code></pre>
+                            <p>The distribution is concentrated in the <span class="highlight">₹25k - ₹75k</span> range, with a significant drop-off for higher salary brackets.</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salaryDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Task D: Departmental Headcount Analysis</h2>
+                <div class="section-toggle">+</div>
+            </div>
+            <div class="section-content">
+                <div class="task-layout">
+                    <div>
+                        <div class="task-subsection">
+                            <h4>Objective & Approach</h4>
+                            <p>This task visualized the proportion of employees across departments to understand the company's organizational structure and resource allocation. A pie chart was the ideal tool to show the percentage contribution of each department to the total workforce.</p>
+                        </div>
+                        <div class="task-subsection">
+                             <h4>Key Formulas & Methods</h4>
+                            <p>A <strong>Pivot Table</strong> was created with 'Department' in the Rows area and 'Count of Department' in the Values area. To show values as a percentage, I right-clicked the values field and selected <strong>"Show Values As" > "% of Grand Total"</strong>. This feature is fundamental for proportional analysis.</p>
+                            <p>The Operations department is the largest at <span class="highlight">38%</span>, suggesting it is central to the business. In contrast, support departments like HR (1.34%) have a much smaller footprint.</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="departmentalAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Task E: Position Tier Analysis</h2>
+                <div class="section-toggle">+</div>
+            </div>
+            <div class="section-content">
+                <div class="task-layout">
+                    <div>
+                        <div class="task-subsection">
+                            <h4>Objective & Approach</h4>
+                            <p>To analyze the employee distribution across position tiers (job roles/levels), I used a Pivot Table to count employees for each position code. A horizontal bar chart was chosen for clear visualization and easy comparison between tiers.</p>
+                        </div>
+                        <div class="task-subsection">
+                            <h4>Key Formulas & Methods</h4>
+                            <p>The analysis was conducted using a <strong>Pivot Table</strong> where 'Post Name' (the position tier identifier) was placed in the Rows area and 'Count of Post Name' was placed in the Values area. This summary was then visualized with a Bar Chart for impact.</p>
+                            <p>Position tiers <span class="highlight">'c9'</span> and <span class="highlight">'c5'</span> are the most populous, indicating these are likely high-volume, mid-level roles, which is critical information for succession planning and talent development.</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="positionTierChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-button-container">
+            <a href="Presentation_Project4_Anirudh.pdf" download class="download-button"><i class="fas fa-file-pdf"></i> Download Full Report (PDF)</a>
+            <a href="Project_4_Analysis_Anirudh.xlsx" download class="excel-download-button"><i class="fas fa-file-excel"></i> Download Excel Workbook</a>
+        </div>
+
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/anirrudhchaudhry" class="linkedin" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            <a href="https://github.com/analystAnirudh/Hiring_Process_Analytics.git" class="github" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="mailto:anirudhchaudhary.bba2023@imsuc.ac.in" class="gmail" title="Gmail"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Portfolio project by <span class="footer-name">Anirudh Chaudhary</span></p>
+        <p class="footer-copyright">&copy; 2025 Anirudh Chaudhary. All rights reserved.</p>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    let createdCharts = {};
+
+    const chartDefaultOptions = (title, isHorizontal = false) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: isHorizontal ? 'y' : 'x',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { font: { size: 12 }, color: '#333', padding: 20 }
+            },
+            title: {
+                display: true, text: title,
+                font: { size: 16, weight: '600' },
+                color: '#333', padding: { top: 10, bottom: 20 }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleFont: { size: 14 }, bodyFont: { size: 12 },
+                padding: 10, cornerRadius: 6,
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: { font: { size: 12 }, color: '#495057' }
+            },
+            x: {
+                grid: { display: isHorizontal },
+                ticks: { font: { size: 12 }, color: '#495057' }
+            }
+        },
+        animation: { duration: 1500, easing: 'easeInOutCubic' }
+    });
+
+    // --- CHART CREATION FUNCTIONS ---
+    function createGenderDistributionChart() {
+        const ctx = document.getElementById('genderDistributionChart')?.getContext('2d');
+        if (!ctx) return;
+        const options = chartDefaultOptions('Gender Distribution of Hires');
+        options.plugins.tooltip.callbacks = {
+             label: function(context) {
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return ` ${context.label}: ${new Intl.NumberFormat().format(value)} (${percentage}%)`;
+            }
+        };
+        createdCharts[ctx.canvas.id] = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Male Hires', 'Female Hires', 'Not Disclosed'],
+                datasets: [{
+                    label: 'Candidates Hired',
+                    data: [2552, 1850, 277],
+                    backgroundColor: ['#774360', '#B25068', '#BDBDBD'],
+                    borderColor: '#FFFFFF', borderWidth: 3, hoverOffset: 8
+                }]
+            },
+            options: options
+        });
+    }
+
+    function createAverageSalaryChart() {
+        const ctx = document.getElementById('averageSalaryChart')?.getContext('2d');
+        if (!ctx) return;
+        const options = chartDefaultOptions('Average Offered Salary by Department');
+        options.scales.y.ticks.callback = value => `₹${(value / 1000).toFixed(0)}k`;
+        options.plugins.tooltip.callbacks = {
+            label: context => `Avg. Salary: ₹${new Intl.NumberFormat('en-IN').format(context.parsed.y)}`
+        };
+        createdCharts[ctx.canvas.id] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Service', 'Operations', 'Sales', 'HR', 'Finance', 'Gen. Mgmt', 'Marketing', 'Production', 'Purchase'],
+                datasets: [{
+                    label: 'Average Salary',
+                    data: [50667, 49130, 49404, 49449, 49759, 58554, 48490, 49518, 52670],
+                    backgroundColor: 'rgba(119, 67, 96, 0.7)',
+                    borderColor: 'rgba(119, 67, 96, 1)',
+                    borderWidth: 1, hoverBackgroundColor: 'rgba(76, 58, 81, 0.9)'
+                }]
+            },
+            options: options
+        });
+    }
+    
+    function createSalaryDistributionChart() {
+        const ctx = document.getElementById('salaryDistributionChart')?.getContext('2d');
+        if (!ctx) return;
+        const options = chartDefaultOptions('Salary Distribution of Hired Candidates');
+        options.plugins.tooltip.callbacks = {
+            label: context => ` ${new Intl.NumberFormat().format(context.parsed.y)} Candidates`
+        };
+        options.scales.x.title = { display: true, text: 'Salary Bins (in ₹)' };
+
+        createdCharts[ctx.canvas.id] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['<25k', '25k-50k', '50k-75k', '75k-100k', '100k+'],
+                datasets: [{
+                    label: 'Number of Candidates',
+                    data: [415, 2038, 1715, 481, 30],
+                    backgroundColor: 'rgba(178, 80, 104, 0.7)',
+                    borderColor: 'rgba(178, 80, 104, 1)',
+                    borderWidth: 1, hoverBackgroundColor: 'rgba(119, 67, 96, 0.9)'
+                }]
+            },
+            options: options
+        });
+    }
+
+    function createDepartmentalAnalysisChart() {
+        const ctx = document.getElementById('departmentalAnalysisChart')?.getContext('2d');
+        if (!ctx) return;
+        const options = chartDefaultOptions('Proportion of Employees by Department');
+        options.plugins.tooltip.callbacks = {
+            label: function(context) {
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return ` ${context.label}: ${percentage}%`;
+            }
+        };
+        createdCharts[ctx.canvas.id] = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Operations', 'Service', 'Sales', 'Production', 'Finance', 'Purchase', 'Marketing', 'HR', 'Gen. Mgmt'],
+                datasets: [{
+                    label: 'Department Headcount',
+                    data: [2712, 1070, 856, 570, 428, 285, 261, 96, 142],
+                    backgroundColor: ['#4C3A51', '#774360', '#B25068', '#E7AB79', '#a27b5c', '#c7a184', '#6b5770', '#8e6c7a', '#ad8a93'],
+                    borderColor: '#FFFFFF', borderWidth: 2, hoverOffset: 8
+                }]
+            },
+            options: options
+        });
+    }
+
+    function createPositionTierChart() {
+        const ctx = document.getElementById('positionTierChart')?.getContext('2d');
+        if (!ctx) return;
+        const options = chartDefaultOptions('Employee Distribution by Position Tier', true);
+        options.scales.y.ticks.font = { size: 10 };
+        options.plugins.tooltip.callbacks = {
+             label: context => ` Employee Count: ${new Intl.NumberFormat().format(context.parsed.x)}`
+        };
+        createdCharts[ctx.canvas.id] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['c9', 'c5', 'i7', 'i5', 'i6', 'b9', 'c8', 'c10', 'i1', 'i4'],
+                datasets: [{
+                    label: 'Number of Employees',
+                    data: [1784, 1743, 976, 786, 527, 456, 319, 232, 222, 88],
+                    backgroundColor: 'rgba(76, 58, 81, 0.8)',
+                    borderColor: 'rgba(76, 58, 81, 1)',
+                    borderWidth: 1, hoverBackgroundColor: 'rgba(119, 67, 96, 1)'
+                }]
+            },
+            options: options
+        });
+    }
+
+    // --- ACCORDION & LAZY-LOAD CHART LOGIC (FIXED) ---
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            const wasActive = section.classList.contains('active');
+            
+            document.querySelectorAll('.section.active').forEach(activeSection => {
+                activeSection.classList.remove('active');
+            });
+
+            if (!wasActive) {
+                section.classList.add('active');
+                const canvas = section.querySelector('canvas');
+                if (canvas && !createdCharts[canvas.id]) {
+                    switch (canvas.id) {
+                        case 'genderDistributionChart': createGenderDistributionChart(); break;
+                        case 'averageSalaryChart': createAverageSalaryChart(); break;
+                        case 'salaryDistributionChart': createSalaryDistributionChart(); break;
+                        case 'departmentalAnalysisChart': createDepartmentalAnalysisChart(); break;
+                        case 'positionTierChart': createPositionTierChart(); break;
+                    }
+                }
+            }
+        });
+    });
+
+    // --- ANIMATED COUNTER LOGIC ---
+    function animateValue(element, start, end, duration, isRatio = false, suffix = '') {
+        if (!element) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            let currentValue = progress * (end - start) + start;
+            
+            if (element.id === 'avg-salary'){
+                 element.innerHTML = `₹${new Intl.NumberFormat('en-IN').format(Math.floor(currentValue))}`;
+            } else if (element.id === 'male-hire-rate') {
+                 element.innerHTML = `${currentValue.toFixed(1)} : ${(100-currentValue).toFixed(1)}`;
+            } else {
+                 element.innerHTML = new Intl.NumberFormat().format(Math.floor(currentValue));
+            }
+
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+    
+    function runAllAnimations() {
+        animateValue(document.getElementById('total-hires'), 0, 4679, 2000);
+        animateValue(document.getElementById('male-hire-rate'), 0, 54.5, 2000, true);
+        animateValue(document.getElementById('avg-salary'), 0, 52670, 2000);
+        animateValue(document.getElementById('duplicates-removed'), 0, 27, 1500);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            runAllAnimations();
+            observer.unobserve(entries[0].target);
+        }
+    }, { threshold: 0.5 });
+    
+    const metricsContainer = document.querySelector('.metrics-container');
+    if (metricsContainer) observer.observe(metricsContainer);
+});
+</script>
+
+</body>
+</html>
